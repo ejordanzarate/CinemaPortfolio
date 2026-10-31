@@ -31,3 +31,6 @@ CLAUDE.md
 
 # contenido de ejemplo solo para astro dev
 src/placeholder/
+
+# wrangler
+.wrangler/
