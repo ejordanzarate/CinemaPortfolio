@@ -3,9 +3,8 @@
 
 backend:
   name: github
-  # TODO: cambiar por el repo de la cuenta de GitHub del cliente.
-  repo: AndreewCore/CinemaPortfolio
-  # El panel hace commit directo a esta rama; debe permitir pushes de la cuenta de Edith.
+  repo: ejordanzarate/CinemaPortfolio
+  # El panel hace commit directo a esta rama; Edith (admin) debe poder saltarse la protección de main.
   branch: main
   # Con dominio en Cloudflare: base_url del worker sveltia-cms-auth. Mientras tanto se entra con token.
 
@@ -28,7 +27,7 @@ media_libraries:
 collections:
   - name: home
     label: Inicio
-    description: Collage de la portada, tu bio y tus datos de contacto.
+    description: Collage de la portada, tu bio, tus datos de contacto y cómo se ven las secciones.
     files:
       - name: collage
         label: Collage de la portada
@@ -63,30 +62,46 @@ collections:
           - { label: Usuario de Instagram, name: instagram, widget: string, hint: "Con @, por ejemplo @edithjordan" }
           - { label: Enlace del perfil de Instagram, name: instagramUrl, widget: string, hint: "https://instagram.com/tu_usuario", pattern: ['^https://', "Debe empezar con https://"] }
 
+      - name: grouping
+        label: Secciones
+        file: src/data/grouping.json
+        format: json
+        fields:
+          - { label: "Fotografía: dividir por eventos", name: events, widget: boolean, default: true, hint: "Apagado: todas las fotos juntas en un mural." }
+          - { label: "Filmmaking: dividir por proyectos", name: videos, widget: boolean, default: false, hint: "Apagado: todos los trabajos juntos, con pestañas por posición." }
+          - { label: "Maquillaje: dividir por looks", name: makeup, widget: boolean, default: false, hint: "Apagado: todas las fotos juntas en un mural." }
+          - { label: "Diseño Gráfico: dividir por proyectos", name: design, widget: boolean, default: false, hint: "Apagado: todas las piezas juntas, con pestañas por tipo." }
+
   - name: videos
     label: Filmmaking
-    label_singular: Trabajo
-    description: Trabajos audiovisuales agrupados por tu posición en el equipo.
+    label_singular: Proyecto
+    description: Proyectos audiovisuales; cada uno reúne tus trabajos en él.
     folder: src/content/videos
     create: true
     slug: "{{slug}}"
-    summary: "{{title}} · {{position}}"
-    sortable_fields: [order, title, position]
-    view_groups:
-      - { label: Posición, field: position }
+    summary: "{{title}}"
+    sortable_fields: [order, title]
     fields:
-      - { label: Título, name: title, widget: string }
-      - { label: Título en inglés, name: title_en, widget: string, required: false, hint: "Si queda vacío, se usa el título en español." }
-      - label: Posición
-        name: position
-        widget: select
-        # Mantener igual a `filmmakingRoles` en src/data/site.ts.
-        options: [Dirección, Producción, Postproducción, Dirección de Fotografía]
-      - { label: YouTube, name: youtube, widget: string, required: false, hint: "Pega el enlace del video. Si lo hay, se muestra el reproductor." }
-      - { label: Imagen, name: image, widget: image, required: false, hint: "Se usa si no hay video de YouTube." }
-      - { label: Descripción de la imagen, name: image_alt, widget: string, required: false, hint: "Si la dejas vacía, se usa el título." }
-      - { label: Descripción de la imagen en inglés, name: image_alt_en, widget: string, required: false }
-      - { label: Orden, name: order, widget: number, value_type: int, default: 0, hint: "Menor número = aparece primero. El primero de cada posición sale destacado." }
+      - { label: Proyecto, name: title, widget: string }
+      - { label: Proyecto en inglés, name: title_en, widget: string, required: false, hint: "Si queda vacío, se usa el nombre en español." }
+      - label: Trabajos
+        name: works
+        widget: list
+        summary: "{{fields.title}} · {{fields.position}}"
+        hint: Arrástralos para ordenarlos. El primero sale destacado.
+        fields:
+          - { label: Título, name: title, widget: string }
+          - { label: Título en inglés, name: title_en, widget: string, required: false, hint: "Si queda vacío, se usa el título en español." }
+          - label: Posición
+            name: position
+            widget: select
+            # Mantener igual a `filmmakingRoles` en src/data/site.ts.
+            options: [Dirección, Producción, Postproducción, Dirección de Fotografía]
+          - { label: YouTube, name: youtube, widget: string, required: false, hint: "Pega el enlace del video. Si lo hay, se muestra el reproductor." }
+          - { label: Imagen, name: image, widget: image, required: false, hint: "Se usa si no hay video de YouTube." }
+          - { label: Descripción de la imagen, name: image_alt, widget: string, required: false, hint: "Si la dejas vacía, se usa el título." }
+          - { label: Descripción de la imagen en inglés, name: image_alt_en, widget: string, required: false }
+      - { label: Orden, name: order, widget: number, value_type: int, default: 0, hint: "Menor número = aparece primero." }
 
   - name: makeup
     label: Maquillaje
@@ -135,30 +150,36 @@ collections:
 
   - name: design
     label: Diseño Gráfico
-    label_singular: Pieza
-    description: Carruseles, reels y piezas sueltas para redes.
+    label_singular: Proyecto
+    description: Proyectos o campañas, cada uno con sus carruseles, reels y piezas.
     folder: src/content/design
     create: true
     slug: "{{slug}}"
-    summary: "{{title}} · {{type}}"
-    sortable_fields: [order, title, type]
-    view_groups:
-      - { label: Tipo, field: type }
+    summary: "{{title}}"
+    sortable_fields: [order, title]
     fields:
-      - { label: Título, name: title, widget: string }
-      - { label: Título en inglés, name: title_en, widget: string, required: false, hint: "Si queda vacío, se usa el título en español." }
-      # Mantener igual a `designTypes` en src/data/site.ts.
-      - { label: Tipo, name: type, widget: select, options: [Carrusel, Reel, Pieza] }
-      - label: Imágenes
-        name: images
+      - { label: Proyecto, name: title, widget: string }
+      - { label: Proyecto en inglés, name: title_en, widget: string, required: false, hint: "Si queda vacío, se usa el nombre en español." }
+      - label: Piezas
+        name: pieces
         widget: list
-        required: false
-        hint: "Carrusel: todas las láminas en orden (4:5). Pieza: una imagen. Reel: la portada."
-        summary: "{{fields.alt}}"
+        summary: "{{fields.title}} · {{fields.type}}"
+        hint: Arrástralas para ordenarlas.
         fields:
-          - { label: Imagen, name: src, widget: image }
-          - { label: Descripción, name: alt, widget: string, required: false, hint: "Qué se ve en la foto, para lectores de pantalla y Google. Si la dejas vacía, se usa el título." }
-          - { label: Descripción en inglés, name: alt_en, widget: string, required: false }
-      - { label: Video del reel, name: video, widget: file, required: false, hint: "MP4 vertical. Solo para reels." }
-      - { label: YouTube Shorts, name: youtube, widget: string, required: false, hint: "Alternativa al video: pega el enlace del Short." }
+          - { label: Título, name: title, widget: string }
+          - { label: Título en inglés, name: title_en, widget: string, required: false, hint: "Si queda vacío, se usa el título en español." }
+          # Mantener igual a `designTypes` en src/data/site.ts.
+          - { label: Tipo, name: type, widget: select, options: [Carrusel, Reel, Pieza] }
+          - label: Imágenes
+            name: images
+            widget: list
+            required: false
+            hint: "Carrusel: todas las láminas en orden (4:5). Pieza: una imagen. Reel: la portada."
+            summary: "{{fields.alt}}"
+            fields:
+              - { label: Imagen, name: src, widget: image }
+              - { label: Descripción, name: alt, widget: string, required: false, hint: "Qué se ve en la foto, para lectores de pantalla y Google. Si la dejas vacía, se usa el título." }
+              - { label: Descripción en inglés, name: alt_en, widget: string, required: false }
+          - { label: Video del reel, name: video, widget: file, required: false, hint: "MP4 vertical. Solo para reels." }
+          - { label: YouTube Shorts, name: youtube, widget: string, required: false, hint: "Alternativa al video: pega el enlace del Short." }
       - { label: Orden, name: order, widget: number, value_type: int, default: 0, hint: "Menor número = aparece primero." }

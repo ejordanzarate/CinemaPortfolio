@@ -1,0 +1,173 @@
+---
+/**
+ * Navegación por grupos, la de Fotografía: lista numerada, flechas y un grupo
+ * visible a la vez. El contenido de cada grupo lo pinta la función hija, que
+ * recibe su índice: `<Groups groups={…}>{(i: number) => …}</Groups>`.
+ */
+import { getLang, useT } from '../i18n/ui';
+
+interface Props {
+  groups: { title: string; label?: string }[];
+  theme?: keyof typeof themes;
+  /** Pasa solo al siguiente grupo cada 10 s; no usar donde haya videos que mirar. */
+  autoplay?: boolean;
+  /** Superpone los grupos con fundido cruzado; solo si todos miden lo mismo, o la altura salta. */
+  stack?: boolean;
+}
+
+// Clases completas y no armadas por partes, para que Tailwind las encuentre.
+const themes = {
+  // Fondo del tema (crema u oscuro según el modo).
+  claro: {
+    num: 'text-marron dark:text-marron-claro',
+    name: 'text-texto/40 group-hover:text-texto group-aria-[current]:text-texto',
+    track: 'bg-texto/10',
+    bar: 'bg-verde',
+    prev: 'border-texto hover:bg-texto hover:text-fondo',
+    next: 'bg-texto text-fondo hover:bg-verde hover:text-crema',
+  },
+  // Secciones negra y marrón: texto crema en ambos modos.
+  negro: {
+    num: 'text-turquesa',
+    name: 'text-crema/40 group-hover:text-crema group-aria-[current]:text-crema',
+    track: 'bg-crema/15',
+    bar: 'bg-turquesa',
+    prev: 'border-crema hover:bg-crema hover:text-negro',
+    next: 'bg-crema text-negro hover:bg-turquesa',
+  },
+  marron: {
+    num: 'text-crema-oscuro/70',
+    name: 'text-crema/45 group-hover:text-crema group-aria-[current]:text-crema',
+    track: 'bg-crema/20',
+    bar: 'bg-turquesa',
+    prev: 'border-crema hover:bg-crema hover:text-marron',
+    next: 'bg-crema text-marron hover:bg-turquesa hover:text-negro',
+  },
+};
+
+const { groups, theme = 'claro', autoplay = false, stack = false } = Astro.props;
+const c = themes[theme];
+const t = useT(getLang(Astro.currentLocale));
+const pad = (n: number) => String(n).padStart(2, '0');
+const hasLabels = groups.some((g) => g.label);
+const panels = await Promise.all(groups.map((_, i) => Astro.slots.render('default', [i])));
+---
+
+<div class="groups grid gap-10 lg:grid-cols-[280px_1fr]" data-autoplay={autoplay ? '' : undefined} data-stack={stack ? '' : undefined}>
+  <ol class="flex gap-3 overflow-x-auto pb-2 [scrollbar-width:none] lg:flex-col lg:gap-1 lg:overflow-visible">
+    {groups.map((g, i) => (
+      <li class="shrink-0">
+        <button class="gbtn group w-full min-w-48 py-3 text-left" data-i={i} aria-current={i === 0 ? 'true' : undefined}>
+          <span class="flex items-baseline gap-3">
+            <span class:list={['font-display text-2xl', c.num]}>{pad(i + 1)}</span>
+            <span class:list={['font-display text-2xl uppercase tracking-wide transition-colors', c.name]}>{g.title}</span>
+          </span>
+          <span class:list={['mt-2 block h-[3px] overflow-hidden', c.track]}>
+            <span class:list={['bar block h-full', c.bar, !autoplay && i === 0 ? 'w-full' : 'w-0']}></span>
+          </span>
+        </button>
+      </li>
+    ))}
+  </ol>
+
+  <div class="min-w-0">
+    {(hasLabels || groups.length > 1) && (
+      <div class="mb-4 flex items-center justify-between gap-4">
+        <p class:list={['text-sm font-bold uppercase tracking-[0.25em]', c.num]}>
+          <span class="glabel">{groups[0]?.label}</span>
+        </p>
+        {groups.length > 1 && (
+          <div class="flex gap-2">
+            <button class:list={['gprev grid h-11 w-11 place-items-center rounded-full border-2 transition', c.prev]} aria-label={t('prev')}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 6l-6 6 6 6" /></svg>
+            </button>
+            <button class:list={['gnext grid h-11 w-11 place-items-center rounded-full transition', c.next]} aria-label={t('next')}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 6l6 6-6 6" /></svg>
+            </button>
+          </div>
+        )}
+      </div>
+    )}
+
+    <div class="layers grid">
+      {panels.map((html, i) => (
+        <div
+          class:list={[
+            'layer',
+            stack ? 'transition-opacity duration-700 [grid-area:1/1]' : 'animate-fade-in',
+            i !== 0 && (stack ? 'pointer-events-none opacity-0' : 'hidden'),
+          ]}
+          data-label={groups[i].label}
+          aria-hidden={i !== 0 ? 'true' : undefined}
+        >
+          <Fragment set:html={html} />
+        </div>
+      ))}
+    </div>
+  </div>
+</div>
+
+<script>
+  const INTERVAL = 10_000;
+  const lightbox = document.getElementById('lightbox') as HTMLDialogElement | null;
+
+  /** Conecta lista, flechas y (si aplica) el avance automático de un bloque de grupos. */
+  function setup(root: HTMLElement) {
+    const layers = [...root.querySelectorAll<HTMLElement>(':scope .layers > .layer')];
+    const items = [...root.querySelectorAll<HTMLButtonElement>('.gbtn')];
+    const bars = items.map((b) => b.querySelector<HTMLElement>('.bar')!);
+    const label = root.querySelector<HTMLElement>('.glabel');
+    const autoplay = root.hasAttribute('data-autoplay');
+    const stack = root.hasAttribute('data-stack');
+    if (layers.length < 2) return;
+
+    let current = 0;
+    let elapsed = 0;
+    let last = performance.now();
+    let paused = false;
+
+    /** Muestra el grupo `i` (con vuelta circular) y reinicia el contador. */
+    function show(i: number) {
+      i = (i + layers.length) % layers.length;
+      layers.forEach((l, k) => {
+        const on = k === i;
+        if (stack) {
+          l.classList.toggle('opacity-0', !on);
+          l.classList.toggle('pointer-events-none', !on);
+        } else {
+          l.classList.toggle('hidden', !on);
+        }
+        l.toggleAttribute('aria-hidden', !on);
+      });
+      items.forEach((b, k) => (k === i ? b.setAttribute('aria-current', 'true') : b.removeAttribute('aria-current')));
+      if (label) label.textContent = layers[i].dataset.label ?? '';
+      // Sin avance automático la barra solo marca el grupo activo.
+      if (!autoplay) bars.forEach((bar, k) => (bar.style.width = k === i ? '100%' : '0%'));
+      current = i;
+      elapsed = 0;
+    }
+
+    /** Avanza el tiempo y pinta la barra de progreso del grupo activo. */
+    function tick(now: number) {
+      // Con el visor abierto tampoco avanza: la foto ampliada no debe cambiar de grupo.
+      if (!paused && !lightbox?.open) elapsed += now - last;
+      last = now;
+      if (elapsed >= INTERVAL) show(current + 1);
+      bars.forEach((bar, k) => (bar.style.width = k === current ? `${(elapsed / INTERVAL) * 100}%` : '0%'));
+      requestAnimationFrame(tick);
+    }
+
+    items.forEach((b) => b.addEventListener('click', () => show(Number(b.dataset.i))));
+    root.querySelector('.gprev')?.addEventListener('click', () => show(current - 1));
+    root.querySelector('.gnext')?.addEventListener('click', () => show(current + 1));
+    if (autoplay) {
+      // Pausar al pasar el cursor da tiempo de ver las fotos sin que cambien.
+      const area = root.querySelector<HTMLElement>('.layers')!;
+      area.addEventListener('mouseenter', () => (paused = true));
+      area.addEventListener('mouseleave', () => (paused = false));
+      requestAnimationFrame(tick);
+    }
+  }
+
+  document.querySelectorAll<HTMLElement>('.groups').forEach(setup);
+</script>

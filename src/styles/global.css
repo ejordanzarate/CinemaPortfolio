@@ -26,6 +26,12 @@
 
   --font-display: "Bebas Neue", Impact, sans-serif;
   --font-sans: "Manrope", system-ui, sans-serif;
+
+  /* Entrada de un grupo al cambiar de pestaña (Groups.astro). */
+  --animate-fade-in: fade-in 0.5s ease;
+  @keyframes fade-in {
+    from { opacity: 0; }
+  }
 }
 
 :root[data-theme="dark"] {

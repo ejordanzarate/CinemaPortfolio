@@ -9,7 +9,7 @@ import optimizeMedia from './src/integrations/optimize-media';
 export default defineConfig({
   // GitHub Pages sirve el sitio bajo /CinemaPortfolio/; con dominio propio queda en "/".
   // URLs absolutas de canonical, Open Graph y sitemap; con dominio propio se pasa SITE_URL.
-  site: process.env.SITE_URL ?? 'https://andreewcore.github.io',
+  site: process.env.SITE_URL ?? 'https://ejordanzarate.github.io',
   base: process.env.BASE_PATH ?? '/',
   // Español en "/" y inglés en "/en/".
   i18n: {

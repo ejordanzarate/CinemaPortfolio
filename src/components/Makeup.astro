@@ -2,19 +2,26 @@
 import { getCollection } from 'astro:content';
 import { asset } from '../data/asset';
 import { altFor, getLang, localized, useT } from '../i18n/ui';
+import grouping from '../data/grouping.json';
+import Groups from './Groups.astro';
+import Mural from './Mural.astro';
 
 const lang = getLang(Astro.currentLocale);
 const t = useT(lang);
 const [titleA, titleB] = t('makeup.title');
 
-const looks = (await getCollection('makeup')).sort((a, b) => a.data.order - b.data.order);
-const photos = looks.flatMap((l) => {
-  const title = localized(l.data, 'title', lang);
-  return l.data.photos.map((p, i) => ({ src: asset(p.src), title, alt: altFor(p, title, i + 1, lang) }));
-});
+const looks = (await getCollection('makeup'))
+  .sort((a, b) => a.data.order - b.data.order)
+  .filter((l) => l.data.photos.length > 0);
+
+/** Fotos de un look listas para el mural. */
+function photosOf(look: (typeof looks)[number]) {
+  const title = localized(look.data, 'title', lang);
+  return look.data.photos.map((p, i) => ({ src: asset(p.src), title, alt: altFor(p, title, i + 1, lang) }));
+}
 ---
 
-{photos.length > 0 && (
+{looks.length > 0 && (
 <section id="maquillaje" class="bg-marron py-24 text-crema md:py-32">
   <div class="mx-auto max-w-7xl px-4 sm:px-6">
     <h2 class="font-display text-[clamp(4.5rem,13vw,10rem)] uppercase leading-[0.8] tracking-wide">
@@ -24,21 +31,14 @@ const photos = looks.flatMap((l) => {
       <span class="flex-1 bg-verde"></span><span class="flex-1 bg-crema"></span><span class="flex-1 bg-turquesa"></span>
     </div>
 
-    <!-- Columnas CSS: cada foto conserva su proporción original, como un mural. -->
-    <div class="mt-12 columns-2 gap-3 md:columns-3 md:gap-4 lg:columns-4">
-      {photos.map((p, i) => (
-        <button
-          class="group relative mb-3 block w-full break-inside-avoid overflow-hidden md:mb-4"
-          data-lightbox={p.src}
-          data-alt={p.alt}
-          aria-label={`${t('enlarge')}: ${p.alt}`}
-        >
-          <img src={p.src} alt={p.alt} loading={i < 4 ? 'eager' : 'lazy'} decoding="async" class="w-full transition duration-700 group-hover:scale-105" />
-          <span class="absolute inset-x-0 bottom-0 translate-y-full bg-negro/80 px-3 py-2 text-left font-display text-xl uppercase tracking-wide transition-transform duration-300 group-hover:translate-y-0">
-            {p.title}
-          </span>
-        </button>
-      ))}
+    <div class="mt-12">
+      {grouping.makeup ? (
+        <Groups groups={looks.map((l) => ({ title: localized(l.data, 'title', lang) }))} theme="marron">
+          {(i: number) => <Mural photos={photosOf(looks[i])} eager={i === 0 ? 4 : 0} />}
+        </Groups>
+      ) : (
+        <Mural photos={looks.flatMap(photosOf)} />
+      )}
     </div>
   </div>
 </section>

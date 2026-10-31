@@ -1,11 +1,11 @@
 ---
 import { areas } from '../data/site';
 import { getLang, term, useT } from '../i18n/ui';
-import collage from '../data/collage.json';
+import { collage } from '../data/home';
 import { asset, posterFor } from '../data/asset';
 
 const dots = ['bg-verde', 'bg-marron', 'bg-turquesa'];
-const clips: { video: string; poster?: string }[] = collage.clips;
+const clips = collage.clips;
 
 const lang = getLang(Astro.currentLocale);
 const t = useT(lang);

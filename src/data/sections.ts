@@ -15,8 +15,8 @@ export async function visibleNavLinks() {
   ]);
   const hidden = new Set<string>();
   if (!events.some((e) => e.data.photos.length > 0)) hidden.add('#fotografia');
-  if (videos.length === 0) hidden.add('#filmmaking');
+  if (!videos.some((p) => p.data.works.length > 0)) hidden.add('#filmmaking');
   if (!makeup.some((l) => l.data.photos.length > 0)) hidden.add('#maquillaje');
-  if (design.length === 0) hidden.add('#diseno');
+  if (!design.some((p) => p.data.pieces.length > 0)) hidden.add('#diseno');
   return navLinks.filter((l) => !hidden.has(l.href));
 }
