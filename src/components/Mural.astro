@@ -1,0 +1,30 @@
+---
+/** Mural de fotos en columnas: cada una conserva su proporción original y abre el visor. */
+import { getLang, useT } from '../i18n/ui';
+
+interface Props {
+  /** `src` ya pasado por asset(); `title` es el rótulo que aparece al pasar el cursor. */
+  photos: { src: string; alt: string; title: string }[];
+  /** Cuántas fotos cargan de inmediato; en grupos ocultos conviene 0. */
+  eager?: number;
+}
+
+const { photos, eager = 4 } = Astro.props;
+const t = useT(getLang(Astro.currentLocale));
+---
+
+<div class="columns-2 gap-3 md:columns-3 md:gap-4 lg:columns-4">
+  {photos.map((p, i) => (
+    <button
+      class="group relative mb-3 block w-full break-inside-avoid overflow-hidden md:mb-4"
+      data-lightbox={p.src}
+      data-alt={p.alt}
+      aria-label={`${t('enlarge')}: ${p.alt}`}
+    >
+      <img src={p.src} alt={p.alt} loading={i < eager ? 'eager' : 'lazy'} decoding="async" class="w-full transition duration-700 group-hover:scale-105" />
+      <span class="absolute inset-x-0 bottom-0 translate-y-full bg-negro/80 px-3 py-2 text-left font-display text-xl uppercase tracking-wide text-crema transition-transform duration-300 group-hover:translate-y-0">
+        {p.title}
+      </span>
+    </button>
+  ))}
+</div>

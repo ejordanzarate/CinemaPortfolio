@@ -25,3 +25,9 @@ pnpm-debug.log*
 
 # Claude
 CLAUDE.md
+
+# caché de optimize-media (fotos y videos ya comprimidos)
+.cache/
+
+# contenido de ejemplo solo para astro dev
+src/placeholder/

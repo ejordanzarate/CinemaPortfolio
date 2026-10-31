@@ -1,23 +1,23 @@
 ---
 import { getCollection } from 'astro:content';
 import { designTypes } from '../data/site';
-import { asset } from '../data/asset';
-import { youtubeId } from '../data/youtube';
 import { getLang, localized, useT } from '../i18n/ui';
+import grouping from '../data/grouping.json';
+import Groups from './Groups.astro';
+import DesignGrid from './DesignGrid.astro';
 
-const pieces = (await getCollection('design')).sort((a, b) => a.data.order - b.data.order);
-const byType = (t: string) => pieces.filter((p) => p.data.type === t);
+const projects = (await getCollection('design'))
+  .sort((a, b) => a.data.order - b.data.order)
+  .filter((p) => p.data.pieces.length > 0);
+const pieces = projects.flatMap((p) => p.data.pieces);
+const byType = (list: typeof pieces, t: string) => list.filter((p) => p.type === t);
 
 const lang = getLang(Astro.currentLocale);
 // `tr` y no `t`: `t` ya nombra el tipo de pieza en los map de abajo.
 const tr = useT(lang);
 const [titleA, titleB] = tr('design.title');
-const title = (p: (typeof pieces)[number]) => localized(p.data, 'title', lang);
-// Sólo se muestran pestañas de tipos que tienen contenido.
-const tabs = designTypes.filter((t) => byType(t).length > 0);
-
-const arrow =
-  'absolute top-1/2 z-10 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-crema/90 text-negro shadow transition hover:bg-turquesa disabled:pointer-events-none disabled:opacity-0';
+// Todo junto: pestañas por tipo, sólo las que tienen contenido.
+const tabs = grouping.design ? [] : designTypes.filter((t) => byType(pieces, t).length > 0);
 ---
 
 {pieces.length > 0 && (
@@ -27,109 +27,33 @@ const arrow =
       <h2 class="font-display text-[clamp(3.5rem,12vw,9rem)] uppercase leading-[0.8] tracking-wide">
         {titleA}<span class="text-turquesa">{titleB}</span>
       </h2>
-      <div class="flex flex-wrap gap-2" role="tablist">
-        {tabs.map((t, i) => (
-          <button
-            role="tab"
-            aria-selected={i === 0 ? 'true' : 'false'}
-            data-tab={t}
-            class="tab rounded-full border-2 border-texto/20 px-5 py-2 text-sm font-bold uppercase tracking-[0.15em] transition-colors hover:border-texto aria-selected:border-texto aria-selected:bg-texto aria-selected:text-fondo"
-          >
-            {tr(`design.${t}`)}
-          </button>
-        ))}
-      </div>
+      {tabs.length > 0 && (
+        <div class="flex flex-wrap gap-2" role="tablist">
+          {tabs.map((t, i) => (
+            <button
+              role="tab"
+              aria-selected={i === 0 ? 'true' : 'false'}
+              data-tab={t}
+              class="tab rounded-full border-2 border-texto/20 px-5 py-2 text-sm font-bold uppercase tracking-[0.15em] transition-colors hover:border-texto aria-selected:border-texto aria-selected:bg-texto aria-selected:text-fondo"
+            >
+              {tr(`design.${t}`)}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
     <div class="mt-6 flex h-[6px]" aria-hidden="true">
       <span class="flex-1 bg-turquesa"></span><span class="flex-1 bg-verde"></span><span class="flex-1 bg-marron"></span>
     </div>
 
-    <!-- Carruseles: deslizables como en redes, formato 4:5. -->
-    <div data-panel="Carrusel" class:list={['panel mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-3', tabs[0] !== 'Carrusel' && 'hidden']}>
-      {byType('Carrusel').map((c) => (
-        <article class="carousel">
-          <div class="relative aspect-[4/5] overflow-hidden bg-fondo">
-            <div class="track flex h-full snap-x snap-mandatory overflow-x-auto [scrollbar-width:none]">
-              {c.data.images.map((src, i) => (
-                <button class="h-full w-full shrink-0 snap-start" data-lightbox={asset(src)} aria-label={`${title(c)} ${i + 1}`}>
-                  <img src={asset(src)} alt={`${title(c)} ${i + 1}`} loading={i === 0 ? "eager" : "lazy"} class="h-full w-full object-cover" />
-                </button>
-              ))}
-            </div>
-            <span class="count absolute right-3 top-3 rounded-full bg-negro/75 px-2.5 py-1 text-xs font-bold text-crema">
-              1/{c.data.images.length}
-            </span>
-            <button class:list={['prev left-3', arrow]} aria-label={tr('prev')} disabled>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 6l-6 6 6 6" /></svg>
-            </button>
-            <button class:list={['next right-3', arrow]} aria-label={tr('next')} disabled={c.data.images.length < 2}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 6l6 6-6 6" /></svg>
-            </button>
-          </div>
-          <div class="mt-3 flex items-center justify-between gap-4">
-            <h3 class="font-display text-2xl uppercase tracking-wide">{title(c)}</h3>
-            <div class="dots flex gap-1.5" aria-hidden="true">
-              {c.data.images.map((_, i) => (
-                <span class:list={['h-1.5 w-1.5 rounded-full transition-colors', i === 0 ? 'bg-texto' : 'bg-texto/20']}></span>
-              ))}
-            </div>
-          </div>
-        </article>
-      ))}
-    </div>
-
-    <!-- Reels: vertical 9:16; video subido o YouTube Shorts. -->
-    <div data-panel="Reel" class:list={['panel mt-12 grid grid-cols-2 gap-4 md:grid-cols-4', tabs[0] !== 'Reel' && 'hidden']}>
-      {byType('Reel').map((r) => (
-        <article>
-          <div class="relative aspect-[9/16] overflow-hidden bg-negro">
-            {r.data.video ? (
-              <>
-                <video
-                  class="reel h-full w-full object-cover"
-                  src={asset(r.data.video)}
-                  poster={r.data.images[0] && asset(r.data.images[0])}
-                  muted
-                  loop
-                  playsinline
-                  preload="none"
-                ></video>
-                <button class="mute absolute bottom-3 right-3 grid h-9 w-9 place-items-center rounded-full bg-negro/70 text-crema transition hover:bg-turquesa hover:text-negro" aria-label={tr('sound.on')}>
-                  <svg class="off" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5 6 9H2v6h4l5 4zM23 9l-6 6M17 9l6 6" /></svg>
-                  <svg class="on hidden" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5 6 9H2v6h4l5 4zM15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14" /></svg>
-                </button>
-              </>
-            ) : r.data.youtube ? (
-              <button class="yt group absolute inset-0" data-id={youtubeId(r.data.youtube)} aria-label={`${tr('play')} ${title(r)}`}>
-                <img
-                  src={r.data.images[0] ? asset(r.data.images[0]) : `https://i.ytimg.com/vi/${youtubeId(r.data.youtube)}/hqdefault.jpg`}
-                  alt=""
-                  loading="lazy"
-                  class="h-full w-full object-cover"
-                />
-                <span class="absolute inset-0 m-auto grid h-14 w-14 place-items-center rounded-full bg-crema text-negro transition group-hover:bg-turquesa">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
-                </span>
-              </button>
-            ) : r.data.images[0] ? (
-              <img src={asset(r.data.images[0])} alt={title(r)} loading="lazy" class="h-full w-full object-cover" />
-            ) : null}
-          </div>
-          <h3 class="mt-3 font-display text-2xl uppercase tracking-wide">{title(r)}</h3>
-        </article>
-      ))}
-    </div>
-
-    <!-- Piezas sueltas: afiches, portadas, etc. -->
-    <div data-panel="Pieza" class:list={['panel mt-12 grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-6', tabs[0] !== 'Pieza' && 'hidden']}>
-      {byType('Pieza').map((p) => p.data.images[0] && (
-        <article>
-          <button class="group block aspect-[4/5] w-full overflow-hidden bg-fondo" data-lightbox={asset(p.data.images[0])} aria-label={title(p)}>
-            <img src={asset(p.data.images[0])} alt={title(p)} loading="lazy" class="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
-          </button>
-          <h3 class="mt-3 font-display text-2xl uppercase tracking-wide">{title(p)}</h3>
-        </article>
-      ))}
+    <div class="mt-12">
+      {grouping.design ? (
+        <Groups groups={projects.map((p) => ({ title: localized(p.data, 'title', lang) }))}>
+          {(i: number) => <DesignGrid pieces={projects[i].data.pieces} />}
+        </Groups>
+      ) : (
+        tabs.map((t, i) => <DesignGrid type={t} pieces={byType(pieces, t)} data-panel={t} class={i !== 0 ? 'hidden' : undefined} />)
+      )}
     </div>
   </div>
 </section>
@@ -140,7 +64,7 @@ const arrow =
   const section = document.getElementById('diseno');
   if (section) {
     const tabs = section.querySelectorAll<HTMLButtonElement>('.tab');
-    const panels = section.querySelectorAll<HTMLElement>('.panel');
+    const panels = section.querySelectorAll<HTMLElement>('[data-panel]');
 
     tabs.forEach((t) =>
       t.addEventListener('click', () => {

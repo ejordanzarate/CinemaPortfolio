@@ -13,7 +13,7 @@
     const trigger = (e.target as HTMLElement).closest<HTMLElement>('[data-lightbox]');
     if (!trigger) return;
     img.src = trigger.dataset.lightbox ?? '';
-    img.alt = trigger.getAttribute('aria-label') ?? '';
+    img.alt = trigger.dataset.alt ?? trigger.getAttribute('aria-label') ?? '';
     lightbox.showModal();
   });
   // Cualquier click cierra: no hay controles dentro que proteger.

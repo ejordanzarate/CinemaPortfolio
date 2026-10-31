@@ -1,10 +1,11 @@
 ---
 import { getRelativeLocaleUrl } from 'astro:i18n';
-import { navLinks } from '../data/site';
+import { visibleNavLinks } from '../data/sections';
 import { getLang, languages, useT } from '../i18n/ui';
 
 const lang = getLang(Astro.currentLocale);
 const t = useT(lang);
+const navLinks = await visibleNavLinks();
 ---
 
 <header class="fixed inset-x-0 top-0 z-50 border-b border-texto/10 bg-fondo/85 backdrop-blur">

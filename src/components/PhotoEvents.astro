@@ -1,7 +1,10 @@
 ---
 import { getCollection } from 'astro:content';
 import { asset } from '../data/asset';
-import { getLang, localized, useT } from '../i18n/ui';
+import { altFor, getLang, localized, useT } from '../i18n/ui';
+import grouping from '../data/grouping.json';
+import Groups from './Groups.astro';
+import Mural from './Mural.astro';
 
 const lang = getLang(Astro.currentLocale);
 const t = useT(lang);
@@ -14,134 +17,49 @@ const events = (await getCollection('events'))
 // El primer elemento es el grande del bento; el resto ocupa una celda.
 const spans = ['col-span-2 row-span-2', '', '', '', ''];
 const fmt = new Intl.DateTimeFormat(lang, { month: 'short', year: 'numeric' });
-const pad = (n: number) => String(n).padStart(2, '0');
+const title = (e: (typeof events)[number]) => localized(e.data, 'title', lang);
+const allPhotos = events.flatMap((e) =>
+  e.data.photos.map((p, j) => ({ src: asset(p.src), title: title(e), alt: altFor(p, title(e), j + 1, lang) })),
+);
 ---
 
+{events.length > 0 && (
 <section id="fotografia" class="relative overflow-hidden py-24">
   <span class="pointer-events-none absolute -right-6 top-6 select-none font-display text-[22vw] leading-none text-verde/[0.06]" aria-hidden="true">{titleA}</span>
 
-  <div class="relative mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-[320px_1fr]">
-    <div class="min-w-0">
-      <h2 class="font-display text-7xl uppercase leading-none tracking-wide">
-        {titleA}<span class="text-verde dark:text-verde-claro">{titleB}</span>
-      </h2>
-      <div class="mt-2 h-[6px] w-20 bg-marron"></div>
+  <div class="relative mx-auto max-w-7xl px-4 sm:px-6">
+    <h2 class="font-display text-7xl uppercase leading-none tracking-wide">
+      {titleA}<span class="text-verde dark:text-verde-claro">{titleB}</span>
+    </h2>
+    <div class="mt-2 h-[6px] w-20 bg-marron"></div>
 
-      <ol class="mt-10 flex gap-3 overflow-x-auto pb-2 [scrollbar-width:none] lg:flex-col lg:gap-1 lg:overflow-visible">
-        {events.map((e, i) => (
-          <li class="shrink-0">
-            <button class="ev group w-full min-w-48 py-3 text-left" data-i={i} aria-current={i === 0 ? 'true' : undefined}>
-              <span class="flex items-baseline gap-3">
-                <span class="font-display text-2xl text-marron dark:text-marron-claro">{pad(i + 1)}</span>
-                <span class="font-display text-2xl uppercase tracking-wide text-texto/40 transition-colors group-hover:text-texto group-aria-[current]:text-texto">
-                  {localized(e.data, 'title', lang)}
-                </span>
-              </span>
-              <span class="mt-2 block h-[3px] overflow-hidden bg-texto/10">
-                <span class="bar block h-full w-0 bg-verde"></span>
-              </span>
-            </button>
-          </li>
-        ))}
-      </ol>
-    </div>
-
-    <div class="min-w-0">
-      <div class="mb-4 flex items-center justify-between gap-4">
-        <p class="text-sm font-bold uppercase tracking-[0.25em] text-marron dark:text-marron-claro">
-          <span id="event-date">{events[0] && fmt.format(events[0].data.date)}</span>
-        </p>
-        {events.length > 1 && (
-          <div class="flex gap-2">
-            <button id="ev-prev" class="grid h-11 w-11 place-items-center rounded-full border-2 border-texto transition hover:bg-texto hover:text-fondo" aria-label={t('prev')}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 6l-6 6 6 6" /></svg>
-            </button>
-            <button id="ev-next" class="grid h-11 w-11 place-items-center rounded-full bg-texto text-fondo transition hover:bg-verde hover:text-crema" aria-label={t('next')}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 6l6 6-6 6" /></svg>
-            </button>
-          </div>
-        )}
-      </div>
-
-      <div id="events" class="grid">
-        {events.map((e, i) => (
-          <div
-            class:list={[
-              'event grid aspect-[2/3] grid-cols-2 grid-rows-3 gap-2 transition-opacity duration-700 [grid-area:1/1] sm:gap-3 md:aspect-[16/9] md:grid-cols-4 md:grid-rows-2',
-              i === 0 ? 'opacity-100' : 'pointer-events-none opacity-0',
-            ]}
-            data-date={fmt.format(e.data.date)}
-            aria-hidden={i !== 0 ? 'true' : undefined}
-          >
-            {e.data.photos.slice(0, 5).map((src, j) => (
-              <button class:list={['photo group relative overflow-hidden bg-fondo-2', spans[j]]} data-lightbox={asset(src)} aria-label={`${t('enlarge')} ${localized(e.data, 'title', lang)} ${j + 1}`}>
-                <img
-                  src={asset(src)}
-                  alt={`${localized(e.data, 'title', lang)} ${j + 1}`}
-                  loading={i === 0 ? 'eager' : 'lazy'}
-                  class="h-full w-full object-cover transition duration-700 group-hover:scale-105"
-                />
-                <span class="absolute inset-0 bg-verde/0 transition-colors group-hover:bg-verde/15"></span>
-              </button>
-            ))}
-          </div>
-        ))}
-      </div>
+    <div class="mt-10">
+      {grouping.events ? (
+        <Groups groups={events.map((e) => ({ title: title(e), label: fmt.format(e.data.date) }))} autoplay stack>
+          {(i: number) => (
+            <div class="grid aspect-[2/3] grid-cols-2 grid-rows-3 gap-2 sm:gap-3 md:aspect-[16/9] md:grid-cols-4 md:grid-rows-2">
+              {events[i].data.photos.slice(0, 5).map((photo, j) => {
+                const alt = altFor(photo, title(events[i]), j + 1, lang);
+                return (
+                <button class:list={['group relative overflow-hidden bg-fondo-2', spans[j]]} data-lightbox={asset(photo.src)} data-alt={alt} aria-label={`${t('enlarge')}: ${alt}`}>
+                  <img
+                    src={asset(photo.src)}
+                    alt={alt}
+                    decoding="async"
+                    loading={i === 0 ? 'eager' : 'lazy'}
+                    class="h-full w-full object-cover transition duration-700 group-hover:scale-105"
+                  />
+                  <span class="absolute inset-0 bg-verde/0 transition-colors group-hover:bg-verde/15"></span>
+                </button>
+                );
+              })}
+            </div>
+          )}
+        </Groups>
+      ) : (
+        <Mural photos={allPhotos} />
+      )}
     </div>
   </div>
-
 </section>
-
-<script>
-  const INTERVAL = 10_000;
-  const root = document.getElementById('events');
-  const layers = [...document.querySelectorAll<HTMLElement>('#events .event')];
-  const items = [...document.querySelectorAll<HTMLButtonElement>('#fotografia .ev')];
-  const date = document.getElementById('event-date')!;
-
-  let current = 0;
-  let elapsed = 0;
-  let last = performance.now();
-  let paused = false;
-  const lightbox = document.getElementById('lightbox') as HTMLDialogElement | null;
-
-  /** Muestra el evento `i` (con vuelta circular) y reinicia el contador. */
-  function show(i: number) {
-    i = (i + layers.length) % layers.length;
-    layers.forEach((l, k) => {
-      const on = k === i;
-      l.classList.toggle('opacity-100', on);
-      l.classList.toggle('opacity-0', !on);
-      l.classList.toggle('pointer-events-none', !on);
-      l.toggleAttribute('aria-hidden', !on);
-    });
-    items.forEach((b, k) => (k === i ? b.setAttribute('aria-current', 'true') : b.removeAttribute('aria-current')));
-    date.textContent = layers[i].dataset.date ?? '';
-    current = i;
-    elapsed = 0;
-  }
-
-  /** Avanza el tiempo y pinta la barra de progreso del evento activo. */
-  function tick(now: number) {
-    // Con el visor abierto tampoco avanza: la foto ampliada no debe cambiar de evento.
-    if (!paused && !lightbox?.open) elapsed += now - last;
-    last = now;
-    if (elapsed >= INTERVAL) show(current + 1);
-    items.forEach((b, k) => {
-      const bar = b.querySelector<HTMLElement>('.bar')!;
-      bar.style.width = k === current ? `${(elapsed / INTERVAL) * 100}%` : '0%';
-    });
-    requestAnimationFrame(tick);
-  }
-
-  if (layers.length > 1 && root) {
-    items.forEach((b) => b.addEventListener('click', () => show(Number(b.dataset.i))));
-    document.getElementById('ev-prev')?.addEventListener('click', () => show(current - 1));
-    document.getElementById('ev-next')?.addEventListener('click', () => show(current + 1));
-    // Pausar al pasar el cursor da tiempo de ver las fotos sin que cambien.
-    root.addEventListener('mouseenter', () => (paused = true));
-    root.addEventListener('mouseleave', () => (paused = false));
-    requestAnimationFrame(tick);
-  }
-
-</script>
+)}

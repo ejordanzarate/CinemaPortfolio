@@ -14,7 +14,9 @@ export const ui = {
     'nav.contacto': 'Contacto',
     'menu': 'Menú',
     'theme.toggle': 'Cambiar tema',
-    'hero.degree': 'Licenciatura en Cine',
+    'hero.degree': 'Licenciada en Cine',
+    'seo.title': 'Edith Jordan | Filmmaking, fotografía y maquillaje',
+    'seo.description': 'Portafolio de Edith Jordan, licenciada en Cine: filmmaking (dirección, producción, postproducción y fotografía), fotografía de eventos, maquillaje y diseño gráfico.',
     'about.title': ['Sobre ', 'mí'],
     'film.title': ['Film', 'making'],
     'makeup.title': ['Maqui', 'llaje'],
@@ -23,15 +25,11 @@ export const ui = {
     'contact.title': ['Hable', 'mos'],
     'contact.word': 'Contacto',
     'contact.email': 'Correo',
-    'contact.name': 'Nombre',
-    'contact.project': 'Proyecto',
-    'contact.message': 'Mensaje',
-    'contact.send': 'Enviar',
-    'contact.ok': '¡Gracias! Te responderé pronto.',
     'prev': 'Anterior',
     'next': 'Siguiente',
     'play': 'Reproducir',
     'enlarge': 'Ampliar',
+    'media.photo': 'foto',
     'sound.on': 'Activar sonido',
     'sound.off': 'Silenciar',
     'design.Carrusel': 'Carruseles',
@@ -48,7 +46,9 @@ export const ui = {
     'nav.contacto': 'Contact',
     'menu': 'Menu',
     'theme.toggle': 'Toggle theme',
-    'hero.degree': 'Bachelor’s in Film',
+    'hero.degree': 'Film Graduate',
+    'seo.title': 'Edith Jordan | Filmmaking, photography & makeup',
+    'seo.description': 'Portfolio of Edith Jordan, film graduate: filmmaking (directing, production, post-production and cinematography), event photography, makeup and graphic design.',
     'about.title': ['About ', 'me'],
     'film.title': ['Film', 'making'],
     'makeup.title': ['Make', 'up'],
@@ -57,15 +57,11 @@ export const ui = {
     'contact.title': ['Let’s ', 'talk'],
     'contact.word': 'Contact',
     'contact.email': 'Email',
-    'contact.name': 'Name',
-    'contact.project': 'Project',
-    'contact.message': 'Message',
-    'contact.send': 'Send',
-    'contact.ok': 'Thank you! I’ll get back to you soon.',
     'prev': 'Previous',
     'next': 'Next',
     'play': 'Play',
     'enlarge': 'Enlarge',
+    'media.photo': 'photo',
     'sound.on': 'Unmute',
     'sound.off': 'Mute',
     'design.Carrusel': 'Carousels',
@@ -107,4 +103,13 @@ export function term(value: string, lang: Lang): string {
 export function localized<T extends Record<string, unknown>>(data: T, field: keyof T & string, lang: Lang): string {
   const en = data[`${field}_en`];
   return lang === 'en' && typeof en === 'string' && en.trim() ? en : String(data[field] ?? '');
+}
+
+/**
+ * Texto alternativo de una foto: el que escribió la dueña en el panel
+ * (en inglés si existe) o, si no, "<título> — foto N" para no dejarla muda.
+ */
+export function altFor(item: { alt?: string; alt_en?: string }, title: string, n: number, lang: Lang): string {
+  const custom = localized(item, 'alt', lang).trim();
+  return custom || `${title} — ${ui[lang]['media.photo']} ${n}`;
 }

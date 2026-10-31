@@ -2,13 +2,38 @@
 import '../styles/global.css';
 import { asset } from '../data/asset';
 import { getRelativeLocaleUrl } from 'astro:i18n';
-import { getLang, languages } from '../i18n/ui';
+import { getLang, languages, term, useT } from '../i18n/ui';
+import { about } from '../data/home';
+import contact from '../data/contact.json';
+import { areas } from '../data/site';
 
+const lang = getLang(Astro.currentLocale);
+const t = useT(lang);
 interface Props {
   title?: string;
+  description?: string;
 }
-const { title = 'Edith Jordan' } = Astro.props;
-const lang = getLang(Astro.currentLocale);
+const { title = t('seo.title'), description = t('seo.description') } = Astro.props;
+
+// Buscadores y redes necesitan URLs absolutas; `site` viene de astro.config.mjs.
+const abs = (path: string) => new URL(path, Astro.site).href;
+const canonical = abs(Astro.url.pathname);
+const ogImage = abs(asset('/og.png'));
+const ogLocale = { es: 'es_ES', en: 'en_US' } as const;
+
+// Datos estructurados: le dicen a Google quién es la persona detrás del sitio.
+const person = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: 'Edith Jordan',
+  url: abs(getRelativeLocaleUrl(lang)),
+  image: about.photo ? abs(asset(about.photo)) : ogImage,
+  description,
+  knowsAbout: areas.map((a) => term(a, lang)),
+  alumniOf: { '@type': 'CollegeOrUniversity', name: 'Universidad Católica de Santiago de Guayaquil' },
+  email: `mailto:${contact.email}`,
+  sameAs: [contact.instagramUrl].filter((u) => /instagram\.com\/.+/.test(u)),
+};
 ---
 
 <html lang={lang}>
@@ -16,7 +41,29 @@ const lang = getLang(Astro.currentLocale);
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/svg+xml" href={asset('/favicon.svg')} />
+    <link rel="icon" href={asset('/favicon.ico')} sizes="48x48" />
+    <link rel="apple-touch-icon" href={asset('/apple-touch-icon.png')} />
     <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="sitemap" href={asset('/sitemap-index.xml')} />
+    <meta name="theme-color" content="#f3e9d2" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#201b16" media="(prefers-color-scheme: dark)" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Edith Jordan" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Edith Jordan" />
+    <meta property="og:locale" content={ogLocale[lang]} />
+    {Object.keys(languages).filter((l) => l !== lang).map((l) => <meta property="og:locale:alternate" content={ogLocale[l as keyof typeof ogLocale]} />)}
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <script type="application/ld+json" set:html={JSON.stringify(person)} />
     <!-- Antes de pintar: evita el destello de tema equivocado al cargar. -->
     <script is:inline>
       (() => {
@@ -26,7 +73,8 @@ const lang = getLang(Astro.currentLocale);
         document.documentElement.dataset.theme = saved === 'dark' ? 'dark' : 'light';
       })();
     </script>
-    {Object.keys(languages).map((l) => <link rel="alternate" hreflang={l} href={getRelativeLocaleUrl(l)} />)}
+    {Object.keys(languages).map((l) => <link rel="alternate" hreflang={l} href={abs(getRelativeLocaleUrl(l))} />)}
+    <link rel="alternate" hreflang="x-default" href={abs(getRelativeLocaleUrl('es'))} />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

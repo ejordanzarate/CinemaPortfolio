@@ -1,78 +1,68 @@
 ---
 import { getCollection } from 'astro:content';
 import { filmmakingRoles } from '../data/site';
-import { youtubeId } from '../data/youtube';
-import { asset } from '../data/asset';
 import { getLang, localized, term, useT } from '../i18n/ui';
+import grouping from '../data/grouping.json';
+import Groups from './Groups.astro';
+import FilmCard from './FilmCard.astro';
 
-const videos = (await getCollection('videos')).sort((a, b) => a.data.order - b.data.order);
+const projects = (await getCollection('videos'))
+  .sort((a, b) => a.data.order - b.data.order)
+  .filter((p) => p.data.works.length > 0);
+const works = projects.flatMap((p) => p.data.works);
 const lang = getLang(Astro.currentLocale);
 const t = useT(lang);
 const [titleA, titleB] = t('film.title');
 
-// Sólo se muestran pestañas de posiciones que tienen contenido.
-const tabs = filmmakingRoles.filter((p) => videos.some((v) => v.data.position === p));
-const firstOfTab = new Set(tabs.map((t) => videos.find((v) => v.data.position === t)?.id));
+// Todo junto: pestañas por posición, sólo las que tienen contenido.
+const tabs = grouping.videos ? [] : filmmakingRoles.filter((p) => works.some((w) => w.position === p));
+const firstOfTab = new Set(tabs.map((t) => works.find((w) => w.position === t)));
 ---
 
+{works.length > 0 && (
 <section id="filmmaking" class="relative overflow-hidden bg-negro py-28 text-crema md:py-36">
   <div class="mx-auto max-w-7xl px-4 sm:px-6">
     <div class="flex flex-wrap items-end justify-between gap-6">
       <h2 class="font-display text-[clamp(3rem,15vw,11rem)] uppercase leading-[0.8] tracking-wide">
         {titleA}<span class="text-turquesa">{titleB}</span>
       </h2>
-      <div class="flex flex-wrap gap-2" role="tablist">
-        {tabs.map((p, i) => (
-          <button
-            role="tab"
-            aria-selected={i === 0 ? 'true' : 'false'}
-            data-tab={p}
-            class="tab rounded-full border-2 border-crema/25 px-5 py-2 text-sm font-bold uppercase tracking-[0.15em] transition-colors hover:border-turquesa aria-selected:border-turquesa aria-selected:bg-turquesa aria-selected:text-negro"
-          >
-            {term(p, lang)}
-          </button>
-        ))}
-      </div>
+      {tabs.length > 0 && (
+        <div class="flex flex-wrap gap-2" role="tablist">
+          {tabs.map((p, i) => (
+            <button
+              role="tab"
+              aria-selected={i === 0 ? 'true' : 'false'}
+              data-tab={p}
+              class="tab rounded-full border-2 border-crema/25 px-5 py-2 text-sm font-bold uppercase tracking-[0.15em] transition-colors hover:border-turquesa aria-selected:border-turquesa aria-selected:bg-turquesa aria-selected:text-negro"
+            >
+              {term(p, lang)}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
     <div class="mt-6 flex h-[6px]" aria-hidden="true">
       <span class="flex-1 bg-verde"></span><span class="flex-1 bg-marron"></span><span class="flex-1 bg-turquesa"></span>
     </div>
 
-    <div class="mt-12 grid gap-6 md:grid-cols-2 md:gap-8">
-      {videos.map((v) => (
-        <article
-          data-position={v.data.position}
-          class:list={['card group', v.data.position !== tabs[0] && 'hidden', firstOfTab.has(v.id) && 'md:col-span-2']}
-        >
-          <div class="relative aspect-video overflow-hidden bg-crema/5 ring-1 ring-crema/10">
-            {v.data.youtube ? (
-              <button class="yt absolute inset-0" data-id={youtubeId(v.data.youtube)} aria-label={`${t('play')} ${localized(v.data, 'title', lang)}`}>
-                <img
-                  src={`https://i.ytimg.com/vi/${youtubeId(v.data.youtube)}/maxresdefault.jpg`}
-                  alt=""
-                  loading="lazy"
-                  onload="if(this.naturalWidth<=120)this.src=this.src.replace('maxresdefault','hqdefault')"
-                  onerror="this.onerror=null;this.src=this.src.replace('maxresdefault','hqdefault')"
-                  class="h-full w-full object-cover opacity-80 transition duration-700 group-hover:scale-[1.03] group-hover:opacity-100"
-                />
-                <span class="absolute inset-0 bg-gradient-to-t from-negro/70 to-transparent"></span>
-                <span class="absolute inset-0 m-auto grid h-20 w-20 place-items-center rounded-full bg-crema text-negro transition group-hover:scale-110 group-hover:bg-turquesa">
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
-                </span>
-              </button>
-            ) : v.data.image ? (
-              <img src={asset(v.data.image)} alt={localized(v.data, 'title', lang)} loading="lazy" class="h-full w-full object-cover transition duration-700 group-hover:scale-[1.03]" />
-            ) : null}
-          </div>
-          <div class="mt-4 flex items-baseline justify-between gap-4 border-b border-crema/15 pb-4">
-            <h3 class="font-display text-3xl uppercase tracking-wide md:text-4xl">{localized(v.data, 'title', lang)}</h3>
-            <span class="text-xs font-bold uppercase tracking-[0.2em] text-turquesa">{term(v.data.position, lang)}</span>
-          </div>
-        </article>
-      ))}
+    <div class="mt-12">
+      {grouping.videos ? (
+        <Groups groups={projects.map((p) => ({ title: localized(p.data, 'title', lang) }))} theme="negro">
+          {(i: number) => (
+            <div class="grid gap-6 md:grid-cols-2 md:gap-8">
+              {projects[i].data.works.map((w, k) => <FilmCard work={w} featured={k === 0} />)}
+            </div>
+          )}
+        </Groups>
+      ) : (
+        <div class="grid gap-6 md:grid-cols-2 md:gap-8">
+          {works.map((w) => <FilmCard work={w} featured={firstOfTab.has(w)} class={w.position !== tabs[0] ? 'hidden' : undefined} />)}
+        </div>
+      )}
     </div>
   </div>
 </section>
+)}
 
 <script>
   const tabs = document.querySelectorAll<HTMLButtonElement>('#filmmaking .tab');

@@ -1,5 +1,7 @@
 {
-  "photo": "https://picsum.photos/seed/edith-retrato/800/1000",
+  "photo": "",
+  "photo_alt": "",
+  "photo_alt_en": "",
   "bio": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.",
   "bio_en": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris."
 }

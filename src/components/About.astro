@@ -1,5 +1,5 @@
 ---
-import about from '../data/about.json';
+import { about } from '../data/home';
 import { asset } from '../data/asset';
 import PaintBlob from './PaintBlob.astro';
 import { getLang, localized, useT } from '../i18n/ui';
@@ -10,13 +10,15 @@ const [titleA, titleB] = t('about.title');
 ---
 
 <section id="sobre-mi" class="relative overflow-hidden py-24 md:py-32">
-  <div class="mx-auto grid max-w-7xl items-center gap-14 px-4 sm:px-6 md:grid-cols-[5fr_7fr] md:gap-20">
+  <div class:list={['mx-auto grid max-w-7xl items-center gap-14 px-4 sm:px-6 md:gap-20', about.photo && 'md:grid-cols-[5fr_7fr]']}>
+    {about.photo && (
     <div class="relative mx-auto w-full max-w-sm md:max-w-none">
       <PaintBlob color="#3FA7A3" rotate={60} class="pointer-events-none absolute -right-10 -top-10 z-10 h-36 w-36 opacity-90" />
       <!-- Bloque desplazado en verde: da profundidad al retrato sin marco literal. -->
       <div class="absolute inset-0 translate-x-4 translate-y-4 bg-verde" aria-hidden="true"></div>
-      <img src={asset(about.photo)} alt="Edith Jordan" class="relative aspect-[4/5] w-full object-cover grayscale-[30%]" />
+      <img src={asset(about.photo)} alt={localized(about, 'photo_alt', lang) || 'Edith Jordan'} decoding="async" class="relative aspect-[4/5] w-full object-cover grayscale-[30%]" />
     </div>
+    )}
 
     <div>
       <h2 class="font-display text-[clamp(4.5rem,12vw,9rem)] uppercase leading-[0.8] tracking-wide">

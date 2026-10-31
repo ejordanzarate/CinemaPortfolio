@@ -1,11 +1,11 @@
 ---
 import { areas } from '../data/site';
 import { getLang, term, useT } from '../i18n/ui';
-import collage from '../data/collage.json';
-import { asset } from '../data/asset';
+import { collage } from '../data/home';
+import { asset, posterFor } from '../data/asset';
 
 const dots = ['bg-verde', 'bg-marron', 'bg-turquesa'];
-const clips: { video: string; poster?: string }[] = collage.clips;
+const clips = collage.clips;
 
 const lang = getLang(Astro.currentLocale);
 const t = useT(lang);
@@ -13,11 +13,12 @@ const t = useT(lang);
 
 <section id="inicio" class="relative isolate flex h-[100svh] max-h-[1000px] min-h-[660px] flex-col overflow-hidden border-b-[6px] border-negro">
   <!-- Collage de clips en bucle: se edita desde el panel (Inicio → Collage). -->
+  {clips.length > 0 && (
   <div class="collage absolute inset-0 -z-20 grid grid-cols-2 grid-rows-3 md:grid-cols-3 md:grid-rows-2" aria-hidden="true">
     {clips.slice(0, 6).map((c) => (
       <video
         src={asset(c.video)}
-        poster={c.poster ? asset(c.poster) : undefined}
+        poster={c.poster ? asset(c.poster) : posterFor(c.video)}
         class="h-full w-full object-cover grayscale contrast-125"
         autoplay
         muted
@@ -27,6 +28,7 @@ const t = useT(lang);
       ></video>
     ))}
   </div>
+  )}
   <!-- Velo del color de fondo, más denso a la izquierda para que el nombre se lea sobre el collage. -->
   <div class="absolute inset-0 -z-10 bg-gradient-to-r from-fondo via-fondo/90 to-fondo/60" aria-hidden="true"></div>
   <div class="absolute inset-0 -z-10 bg-marron/10 mix-blend-multiply" aria-hidden="true"></div>
