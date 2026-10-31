@@ -37,11 +37,11 @@ Se edita todo desde `/admin`. Las subidas van a `public/uploads/` y las fotos se
 - Con dominio propio: verificarlo en Google Search Console y enviar el sitemap.
 
 ## Publicar en Cloudflare Pages
-1. Subir el repo a GitHub y conectarlo en Cloudflare Pages (build `pnpm build`, salida `dist`).
+1. Conectar `ejordanzarate/CinemaPortfolio` en Cloudflare Pages: rama `main`, build `pnpm build`, salida `dist`,
+   variables `NODE_VERSION=24`, `PNPM_VERSION=11` y `SITE_URL` (URL `*.pages.dev` o el dominio). Sin `BASE_PATH`.
 2. Desplegar el worker [sveltia-cms-auth](https://github.com/sveltia/sveltia-cms-auth) y su OAuth App de GitHub
    para entrar con “Sign In with GitHub” en lugar de token.
-3. En `public/admin/config.yml` poner el `repo` del cliente y `base_url` = URL del worker.
-4. Quitar `functions/api` (era el login de Decap).
+3. En `public/admin/config.yml` poner `base_url` = URL del worker.
 
 ## GitHub Pages
 Cada merge a `main` publica el sitio con `.github/workflows/deploy.yml` en
