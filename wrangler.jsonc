@@ -1,0 +1,6 @@
+// Worker de Cloudflare que sirve el sitio estático generado por `pnpm build`.
+{
+  "name": "cinemaportfolio",
+  "compatibility_date": "2026-10-31",
+  "assets": { "directory": "./dist" }
+}
