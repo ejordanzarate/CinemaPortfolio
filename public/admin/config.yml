@@ -15,7 +15,7 @@ public_folder: /uploads
 media_libraries:
   default:
     config:
-      max_file_size: 52428800 # 50 MB (los videos se comprimen al publicar)
+      max_file_size: 26214400 # 25 MiB: límite por archivo de Cloudflare; el build nunca agranda un archivo
       slugify_filename: true
       transformations:
         raster_image:
