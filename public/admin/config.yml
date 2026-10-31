@@ -3,9 +3,8 @@
 
 backend:
   name: github
-  # TODO: cambiar por el repo de la cuenta de GitHub del cliente.
-  repo: AndreewCore/CinemaPortfolio
-  # El panel hace commit directo a esta rama; debe permitir pushes de la cuenta de Edith.
+  repo: ejordanzarate/CinemaPortfolio
+  # El panel hace commit directo a esta rama; Edith (admin) debe poder saltarse la protección de main.
   branch: main
   # Con dominio en Cloudflare: base_url del worker sveltia-cms-auth. Mientras tanto se entra con token.
 
